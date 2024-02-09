@@ -1,6 +1,7 @@
 // npm i apollo-server graphql
 
-import {ApolloServer, gql} from 'apollo-server';
+import {ApolloServer, UserInputError,  gql} from 'apollo-server';
+import { v4 as uuidv4 } from "uuid";
 
 const persons = [
   {
@@ -47,6 +48,15 @@ type Address {
     allNamesCapitalCase: [String]!
     findPerson(name: String!): Person
   }
+
+  type Mutation {
+    addPerson(
+      name: String!
+      phone: String
+      street: String!
+      city: String!
+    ): Person
+  }
 `;
 
 const resolvers = {
@@ -66,6 +76,21 @@ const resolvers = {
       return persons.find((person) => person.name === name);
     },
   },
+
+  Mutation: {
+    addPerson(root, args){
+      if(persons.find(person => person.phone === args.phone)){
+        throw new UserInputError("Phone must be unique", {
+          invalidArgs: args.phone
+        });
+      };
+      const person = { ...args, id: uuidv4() };
+      persons.push(person)
+      return person
+    }
+  },
+
+
   Person: {
     address: (root) => {
       return {
