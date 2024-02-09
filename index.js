@@ -28,6 +28,11 @@ const persons = [
 
 const typeDefinitions = gql`
 
+enum hasPhoneNumber {
+  YES
+  NO
+}
+
 type Address {
     street: String
     city: String
@@ -44,7 +49,7 @@ type Address {
 
   type Query {
     personCount: Int!
-    allPersons: [Person]!
+    allPersons(hasPhone: hasPhoneNumber): [Person]!
     allNamesCapitalCase: [String]!
     findPerson(name: String!): Person
   }
@@ -56,13 +61,25 @@ type Address {
       street: String!
       city: String!
     ): Person
+    # 
+    editNumber(
+      id: String!
+      phone: String!
+    ): Person
   }
 `;
 
 const resolvers = {
   Query: {
     personCount: () => persons.length,
-    allPersons: () => persons,
+    allPersons: (root, args) => {
+      if (!args.hasPhone) return persons;
+
+      const byPhone = person => {
+       return args.hasPhone === "YES" ? person.phone : !person.phone;
+      }
+      return persons.filter(byPhone)
+    },
     allNamesCapitalCase: () => {
       const arr = [];
 
@@ -78,18 +95,27 @@ const resolvers = {
   },
 
   Mutation: {
-    addPerson(root, args){
-      if(persons.find(person => person.phone === args.phone)){
+    addPerson( _, args) {
+      if (persons.find((person) => person.phone === args.phone)) {
         throw new UserInputError("Phone must be unique", {
-          invalidArgs: args.phone
+          invalidArgs: args.phone,
         });
-      };
+      }
       const person = { ...args, id: uuidv4() };
-      persons.push(person)
-      return person
+      persons.push(person);
+      return person;
+    },
+    editNumber: ( _, args) => {
+      const personIndex = persons.findIndex(person => person.id === args.id)
+      if (personIndex === -1) return null;
+
+      const person = persons[personIndex];
+
+      const updatePerson = {...person, phone: args.phone}
+      persons[personIndex] = updatePerson;
+      return updatePerson
     }
   },
-
 
   Person: {
     address: (root) => {
@@ -98,7 +124,8 @@ const resolvers = {
         city: root.city,
       };
     },
-    addressSentence: (root) => `My name is ${root.name}, I live in ${root.street}, ${root.city}`,
+    addressSentence: (root) =>
+      `My name is ${root.name}, I live in ${root.street}, ${root.city}`,
     check: () => "Good morning!",
   },
 };
