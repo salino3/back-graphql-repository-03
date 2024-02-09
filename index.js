@@ -2,29 +2,9 @@
 
 import {ApolloServer, UserInputError,  gql} from 'apollo-server';
 import { v4 as uuidv4 } from "uuid";
+import axios from 'axios';
+import { error } from 'console';
 
-const persons = [
-  {
-    id: "3durj545736njf773-334ghh-34-vdg6p",
-    name: "Joe",
-    phone: "037993-282633227",
-    street: "c/ San Miguel",
-    city: "Barcelona",
-  },
-  {
-    id: "3durj544456njf773-334ghh-34-vdg6p",
-    name: "Daniel",
-    phone: "037902-282633227",
-    street: "c/ San Rafael",
-    city: "Madrid",
-  },
-  {
-    id: "3durj444736njf773-777ghh-34-vdg6p",
-    name: "Gigi",
-    street: "c/ San Nicola",
-    city: "Bilbao",
-  },
-];
 
 const typeDefinitions = gql`
 
@@ -72,18 +52,27 @@ type Address {
 const resolvers = {
   Query: {
     personCount: () => persons.length,
-    allPersons: (root, args) => {
-      if (!args.hasPhone) return persons;
+  allPersons: async (root, args) => {
 
-      const byPhone = person => {
-       return args.hasPhone === "YES" ? person.phone : !person.phone;
-      }
-      return persons.filter(byPhone)
-    },
-    allNamesCapitalCase: () => {
+  return await axios.get("http://localhost:3000/persons")
+  .then(({data}) => {
+   if (!args.hasPhone) return data;
+
+    const byPhone = (person) => {
+      return args.hasPhone === "YES" ? person.phone : !person.phone;
+    };
+
+    return data.filter(byPhone);
+  })
+  .catch((error) => {
+    console.error(error);
+  });
+},
+    allNamesCapitalCase: async () => {
       const arr = [];
+      const {data} = await axios.get("http://localhost:3000/persons");
 
-      persons.map((person) => {
+      data.map((person) => {
         arr.push(person.name.toLowerCase());
       });
       return arr;

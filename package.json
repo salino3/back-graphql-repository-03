@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "json-server": "json-server --watch db.json",
     "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +15,7 @@
   "dependencies": {
     "apollo-server": "^3.13.0",
     "graphql": "^16.8.1",
+    "json-server": "^1.0.0-alpha.23",
     "uuid": "^9.0.1"
   }
 }
