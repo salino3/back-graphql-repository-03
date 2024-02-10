@@ -3,7 +3,6 @@
 import {ApolloServer, UserInputError,  gql} from 'apollo-server';
 import { v4 as uuidv4 } from "uuid";
 import axios from 'axios';
-import { error } from 'console';
 
 
 const typeDefinitions = gql`
@@ -77,23 +76,35 @@ const resolvers = {
       });
       return arr;
     },
-    findPerson: (root, args) => {
+    findPerson: async (root, args) => {
       const { name } = args;
-      return persons.find((person) => person.name === name);
+      const persons = await axios.get("http://localhost:3000/persons");
+
+      const person = persons.data.find(p => p.name === name)
+      return person;
     },
   },
 
   Mutation: {
-    addPerson( _, args) {
-      if (persons.find((person) => person.phone === args.phone)) {
-        throw new UserInputError("Phone must be unique", {
-          invalidArgs: args.phone,
-        });
-      }
-      const person = { ...args, id: uuidv4() };
-      persons.push(person);
-      return person;
+    addPerson: async  (_, args) => {
+
+     const person = await axios.post("http://localhost:3000/persons", {
+        ...args,
+        id: uuidv4()
+      })
+
+     return person.data
     },
+    // addPerson( _, args) {
+    //   if (persons.find((person) => person.phone === args.phone)) {
+    //     throw new UserInputError("Phone must be unique", {
+    //       invalidArgs: args.phone,
+    //     });
+    //   }
+    //   const person = { ...args, id: uuidv4() };
+    //   persons.push(person);
+    //   return person;
+    // },
     editNumber: ( _, args) => {
       const personIndex = persons.findIndex(person => person.id === args.id)
       if (personIndex === -1) return null;
