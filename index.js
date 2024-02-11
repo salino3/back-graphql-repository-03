@@ -88,23 +88,26 @@ const resolvers = {
   Mutation: {
     addPerson: async  (_, args) => {
 
-     const person = await axios.post("http://localhost:3000/persons", {
-        ...args,
-        id: uuidv4()
-      })
+      try {
+        const persons = await axios.get("http://localhost:3000/persons");
+      if (persons.data.find((person) => person.phone === args.phone)) {
+        throw new UserInputError("Phone must be unique", {
+          invalidArgs: args.phone,
+        });
+      } else {
+        const person = await axios.post("http://localhost:3000/persons", {
+             ...args,
+             id: uuidv4()
+           })
+     
+          return person.data;
+      };
 
-     return person.data
+      } catch (error) {
+        console.error(error);
+        return error.message
+      }
     },
-    // addPerson( _, args) {
-    //   if (persons.find((person) => person.phone === args.phone)) {
-    //     throw new UserInputError("Phone must be unique", {
-    //       invalidArgs: args.phone,
-    //     });
-    //   }
-    //   const person = { ...args, id: uuidv4() };
-    //   persons.push(person);
-    //   return person;
-    // },
     editNumber: ( _, args) => {
       const personIndex = persons.findIndex(person => person.id === args.id)
       if (personIndex === -1) return null;
